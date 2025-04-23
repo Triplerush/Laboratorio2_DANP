@@ -4,23 +4,32 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.List
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.core.view.WindowCompat
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        WindowCompat.setDecorFitsSystemWindows(window, false)
         setContent {
             EdificacionesApp()
         }
@@ -36,13 +45,17 @@ data class Edificacion(
 
 enum class FilterType { TITLE, CATEGORY, DESCRIPTION }
 
+val PinkBackground = Color(0xFFFF9A9A)
+val LighterPink = Color(0xFFFFB6B6)
+val TextColor = Color.Black
+val NavBarColor = Color(0xFFE8E8E8)
+
 @Composable
 fun EdificacionesApp() {
-    // estado de búsqueda y filtro
     var searchText by remember { mutableStateOf("") }
     var filter by remember { mutableStateOf(FilterType.TITLE) }
+    var selectedTab by remember { mutableStateOf(1) }
 
-    // lista original
     val all = remember {
         listOf(
             Edificacion("Catedral", "Iglesia",
@@ -96,7 +109,6 @@ fun EdificacionesApp() {
         )
     }
 
-    // filtrado según texto y criterio
     val filtered = all.filter { ed ->
         val txt = searchText.lowercase()
         when(filter) {
@@ -107,16 +119,49 @@ fun EdificacionesApp() {
     }
 
     MaterialTheme {
-        Column(modifier = Modifier.fillMaxSize()) {
-            SearchBar(searchText) { searchText = it }
-            FilterOptions(filter) { filter = it }
-            Text(
-                text = "Lista de edificaciones",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(16.dp)
-            )
-            EdificacionesList(items = filtered)
+        Scaffold(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(PinkBackground)
+                .statusBarsPadding(),
+            containerColor = PinkBackground,
+            bottomBar = {
+                NavigationBar(
+                    containerColor = NavBarColor,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    NavigationBarItem(
+                        icon = { Icon(Icons.Filled.Home, contentDescription = "Home") },
+                        label = { Text("Home") },
+                        selected = selectedTab == 0,
+                        onClick = { selectedTab = 0 }
+                    )
+                    NavigationBarItem(
+                        icon = { Icon(Icons.Filled.List, contentDescription = "Edificaciones") },
+                        label = { Text("Edificaciones") },
+                        selected = selectedTab == 1,
+                        onClick = { selectedTab = 1 }
+                    )
+                }
+            }
+        ) { paddingValues ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .background(PinkBackground)
+            ) {
+                SearchBar(searchText) { searchText = it }
+                FilterOptions(filter) { filter = it }
+                Text(
+                    text = "Lista de edificaciones",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = TextColor,
+                    modifier = Modifier.padding(16.dp)
+                )
+                EdificacionesList(items = filtered)
+            }
         }
     }
 }
@@ -124,10 +169,21 @@ fun EdificacionesApp() {
 @Composable
 fun SearchBar(text: String, onTextChange: (String)->Unit) {
     OutlinedTextField(
-        value       = text,
+        value = text,
         onValueChange = onTextChange,
         placeholder = { Text("Buscar edificaciones") },
-        modifier    = Modifier
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedContainerColor = Color.Transparent,
+            unfocusedContainerColor = Color.Transparent,
+            focusedTextColor = TextColor,
+            unfocusedTextColor = TextColor,
+            focusedPlaceholderColor = TextColor.copy(alpha = 0.7f),
+            unfocusedPlaceholderColor = TextColor.copy(alpha = 0.7f),
+            focusedBorderColor = TextColor,
+            unfocusedBorderColor = TextColor.copy(alpha = 0.5f),
+            cursorColor = TextColor
+        ),
+        modifier = Modifier
             .fillMaxWidth()
             .padding(16.dp)
     )
@@ -135,74 +191,117 @@ fun SearchBar(text: String, onTextChange: (String)->Unit) {
 
 @Composable
 fun FilterOptions(selected: FilterType, onSelect: (FilterType)->Unit) {
-    Row(modifier = Modifier.padding(horizontal = 16.dp)) {
+    Row(
+        modifier = Modifier
+            .padding(horizontal = 16.dp)
+            .fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
         RadioButton(
             selected = selected == FilterType.TITLE,
-            onClick  = { onSelect(FilterType.TITLE) }
+            onClick = { onSelect(FilterType.TITLE) },
+            colors = RadioButtonDefaults.colors(
+                selectedColor = TextColor,
+                unselectedColor = TextColor.copy(alpha = 0.6f)
+            )
         )
-        Text("Título", modifier = Modifier
-            .padding(start = 4.dp, end = 16.dp)
-            .clickable { onSelect(FilterType.TITLE) }
+        Text(
+            "Título",
+            color = TextColor,
+            modifier = Modifier
+                .padding(start = 4.dp, end = 16.dp)
+                .clickable { onSelect(FilterType.TITLE) }
         )
         RadioButton(
             selected = selected == FilterType.CATEGORY,
-            onClick  = { onSelect(FilterType.CATEGORY) }
+            onClick = { onSelect(FilterType.CATEGORY) },
+            colors = RadioButtonDefaults.colors(
+                selectedColor = TextColor,
+                unselectedColor = TextColor.copy(alpha = 0.6f)
+            )
         )
-        Text("Categoría", modifier = Modifier
-            .padding(start = 4.dp, end = 16.dp)
-            .clickable { onSelect(FilterType.CATEGORY) }
+        Text(
+            "Categoría",
+            color = TextColor,
+            modifier = Modifier
+                .padding(start = 4.dp, end = 16.dp)
+                .clickable { onSelect(FilterType.CATEGORY) }
         )
         RadioButton(
             selected = selected == FilterType.DESCRIPTION,
-            onClick  = { onSelect(FilterType.DESCRIPTION) }
+            onClick = { onSelect(FilterType.DESCRIPTION) },
+            colors = RadioButtonDefaults.colors(
+                selectedColor = TextColor,
+                unselectedColor = TextColor.copy(alpha = 0.6f)
+            )
         )
-        Text("Descripción", modifier = Modifier
-            .padding(start = 4.dp)
-            .clickable { onSelect(FilterType.DESCRIPTION) }
+        Text(
+            "Descripción",
+            color = TextColor,
+            modifier = Modifier
+                .padding(start = 4.dp)
+                .clickable { onSelect(FilterType.DESCRIPTION) }
         )
     }
 }
 
 @Composable
 fun EdificacionesList(items: List<Edificacion>) {
-    LazyColumn(modifier = Modifier.fillMaxSize()) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(bottom = 8.dp)
+    ) {
         items(items) { ed ->
             EdificacionItem(ed)
-            Divider()
+            Spacer(modifier = Modifier.height(4.dp))
         }
     }
 }
 
 @Composable
 fun EdificacionItem(ed: Edificacion) {
-    Row(
+    Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(12.dp)
-    ) {
-        Image(
-            painter           = painterResource(id = ed.imageRes),
-            contentDescription = ed.title,
-            modifier          = Modifier
-                .size(64.dp)
-                .clip(CircleShape)
+            .padding(horizontal = 16.dp, vertical = 4.dp),
+        shape = RoundedCornerShape(8.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = LighterPink
         )
-        Spacer(modifier = Modifier.width(12.dp))
-        Column(modifier = Modifier.fillMaxWidth()) {
-            Text(
-                text     = ed.title,
-                style    = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.SemiBold
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalAlignment = Alignment.Top
+        ) {
+            Image(
+                painter = painterResource(id = ed.imageRes),
+                contentDescription = ed.title,
+                modifier = Modifier
+                    .size(64.dp)
+                    .clip(CircleShape)
             )
-            Text(
-                text  = ed.category,
-                style = MaterialTheme.typography.bodySmall
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text  = ed.description,
-                style = MaterialTheme.typography.bodyMedium
-            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    text = ed.title,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = TextColor
+                )
+                Text(
+                    text = ed.category,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = TextColor.copy(alpha = 0.7f)
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = ed.description,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = TextColor
+                )
+            }
         }
     }
 }
